@@ -33,24 +33,20 @@
     function rodar() {
       if (!confirm('Rodar o robô agora?')) return;
       b.disabled = true; msg.textContent = 'Disparando...';
-      // Chama o porteiro como <script> (JSONP): o navegador não bloqueia isso, ao contrário de fetch (CORS).
-      var nome = 'rb' + Date.now(), el = document.createElement('script'), terminou = false;
-      function fim(d, erro) {
-        if (terminou) return; terminou = true;
-        try { delete window[nome]; } catch (e) { window[nome] = undefined; }
-        if (el.parentNode) el.parentNode.removeChild(el);
-        if (d) { msg.textContent = (d.ok ? '✅ ' : '⚠️ ') + d.msg; if (!d.ok) b.disabled = false; }
-        else { b.disabled = false; msg.textContent = '⚠️ ' + erro; }
-      }
-      window[nome] = function (d) { fim(d); };
-      el.onerror = function () {
-        fim(null, 'Não consegui falar com o porteiro. Confira o link e a internet, e tente de novo.');
-      };
-      setTimeout(function () {
-        fim(null, 'O porteiro não respondeu. Confira se o Passo 1 (Nova versão) foi feito e tente de novo.');
-      }, 25000);
-      el.src = u + '?acao=rodar&k=' + encodeURIComponent(k) + '&callback=' + nome;
-      document.body.appendChild(el);
+      var url = u + '?acao=rodar&k=' + encodeURIComponent(k);
+      // 1) tenta chamar "por trás" e mostrar o resultado aqui mesmo
+      fetch(url)
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+          msg.textContent = (d.ok ? '✅ ' : '⚠️ ') + d.msg;
+          if (!d.ok) b.disabled = false;
+        })
+        // 2) plano B: alguns navegadores/redes bloqueiam a chamada por trás; então abre o porteiro direto
+        //    (ele responde um texto simples, tipo "✅ Robô iniciado!"). Use "voltar" para retornar ao botão.
+        .catch(function () {
+          msg.textContent = 'Abrindo o porteiro...';
+          location.href = url + '&formato=texto';
+        });
     }
   </script>
 </body>
