@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Robô da Rodada">
+  <title>Robô da Rodada</title>
+  <style>
+    body{font-family:system-ui,-apple-system,sans-serif;background:#0f3a20;color:#fff;margin:0;padding:24px;text-align:center}
+    h1{font-size:24px;margin-top:32px}
+    p{opacity:.9}
+    button{background:#22c55e;color:#06210f;border:0;border-radius:18px;font-size:28px;font-weight:700;
+           padding:30px 24px;width:100%;max-width:440px;margin-top:24px}
+    button:disabled{opacity:.5}
+    #msg{margin-top:28px;font-size:19px;min-height:48px}
+    small{opacity:.65}
+  </style>
+</head>
+<body>
+  <h1>⚽ Robô da Rodada</h1>
+  <p>Gera as artes de todas as plataformas e salva no Drive.</p>
+  <button id="b" onclick="rodar()">RODAR AGORA</button>
+  <div id="msg"></div>
+  <p><small>Você recebe um e-mail quando terminar (uns 15 a 20 minutos).</small></p>
+  <script>
+    // O endereço do porteiro e a chave vêm no próprio link, depois do "#" (não vão para nenhum servidor).
+    var h = new URLSearchParams(location.hash.slice(1));
+    var u = h.get('u'), k = h.get('k');
+    var msg = document.getElementById('msg'), b = document.getElementById('b');
+    if (!u || !k) { b.disabled = true; msg.textContent = 'Link incompleto. Peça o link do botão de novo.'; }
+    function rodar() {
+      if (!confirm('Rodar o robô agora?')) return;
+      b.disabled = true; msg.textContent = 'Disparando...';
+      fetch(u + '?acao=rodar&k=' + encodeURIComponent(k))
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+          msg.textContent = (d.ok ? '✅ ' : '⚠️ ') + d.msg;
+          if (!d.ok) b.disabled = false;
+        })
+        .catch(function () { b.disabled = false; msg.textContent = '⚠️ Não consegui falar com o porteiro. Tente de novo.'; });
+    }
+  </script>
+</body>
+</html>
