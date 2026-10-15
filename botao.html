@@ -33,25 +33,24 @@
     function rodar() {
       if (!confirm('Rodar o robô agora?')) return;
       b.disabled = true; msg.textContent = 'Disparando...';
-      fetch(u + '?acao=rodar&k=' + encodeURIComponent(k))
-        .then(function (r) { return r.text().then(function (t) { return { status: r.status, texto: t }; }); })
-        .then(function (x) {
-          var d = null;
-          try { d = JSON.parse(x.texto); } catch (e) {}
-          if (d) {
-            msg.textContent = (d.ok ? '✅ ' : '⚠️ ') + d.msg;
-            if (!d.ok) b.disabled = false;
-          } else {
-            b.disabled = false;
-            msg.textContent = '⚠️ O porteiro respondeu, mas com a versão ANTIGA do código (código ' + x.status +
-              '). No Google Script: cole o Codigo.gs novo e publique "Nova versão".';
-          }
-        })
-        .catch(function (e) {
-          b.disabled = false;
-          msg.textContent = '⚠️ Não consegui falar com o porteiro (' + (e && e.message ? e.message : 'erro de rede') +
-            '). Confira se o endereço do link está completo e se a implantação está como "Qualquer pessoa".';
-        });
+      // Chama o porteiro como <script> (JSONP): o navegador não bloqueia isso, ao contrário de fetch (CORS).
+      var nome = 'rb' + Date.now(), el = document.createElement('script'), terminou = false;
+      function fim(d, erro) {
+        if (terminou) return; terminou = true;
+        try { delete window[nome]; } catch (e) { window[nome] = undefined; }
+        if (el.parentNode) el.parentNode.removeChild(el);
+        if (d) { msg.textContent = (d.ok ? '✅ ' : '⚠️ ') + d.msg; if (!d.ok) b.disabled = false; }
+        else { b.disabled = false; msg.textContent = '⚠️ ' + erro; }
+      }
+      window[nome] = function (d) { fim(d); };
+      el.onerror = function () {
+        fim(null, 'Não consegui falar com o porteiro. Confira o link e a internet, e tente de novo.');
+      };
+      setTimeout(function () {
+        fim(null, 'O porteiro não respondeu. Confira se o Passo 1 (Nova versão) foi feito e tente de novo.');
+      }, 25000);
+      el.src = u + '?acao=rodar&k=' + encodeURIComponent(k) + '&callback=' + nome;
+      document.body.appendChild(el);
     }
   </script>
 </body>
